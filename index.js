@@ -7,7 +7,10 @@ const copyDir = require('copy-dir');
 const rimraf = require('rimraf');
 const template = require('./utilities/template');
 
-const projectChoices = fs.readdirSync(`${__dirname}/projects`);
+
+const projectChoices = [
+  'Ausar: A PWA inside a WordPress theme.'
+];
 
 const questions = [
   {
@@ -59,7 +62,7 @@ const currentDir = process.cwd();
 
 const createDirectoryContents = (templatePath, projectName, userAnswers) => {
   const filesToCreate = fs.readdirSync(templatePath);
-  const projectChoice = userAnswers['project-choice'];
+  const projectChoice = getProjectType(userAnswers['project-choice']);
   const localWordPressURL = userAnswers['local-wordpress-url'];
 
   const settings = {
@@ -108,11 +111,11 @@ const cleanUp = (projectName) => {
 }
 
 const finishLogs = (projectName) => {
-  console.log(`${projectName} was created.`);
-  console.log('Run the following commands to start!');
-  console.log('------------------------------------');
-  console.log(`cd ${projectName}`);
-  console.log('npm start');
+  console.info(`${projectName} was created.`);
+  console.info('Run the following commands to start!');
+  console.info('------------------------------------');
+  console.info(`cd ${projectName}`);
+  console.info('npm start');
 }
 
 const validateProjectName = (projectName) => {
@@ -123,8 +126,8 @@ const validateProjectName = (projectName) => {
 
 const isAusarAuset = (answers) => {
   if (
-    answers['project-choice'] === 'ausar' ||
-    answers['project-choice'] === 'auset'
+    getProjectType(answers['project-choice']) === 'ausar' ||
+    getProjectType(answers['project-choice']) === 'auset'
   ) {
     return true;
   }
@@ -140,6 +143,12 @@ const isInstallWordPress = (answers) => {
   return false;
 }
 
+const getProjectType = (projectChoice) => {
+  const array = projectChoice.split(":");
+
+  return array[0].toLowerCase();
+}
+
 const project = process.argv[2];
 const isForce = process.argv[3] === '--force'
 
@@ -149,7 +158,7 @@ if (project) {
       inquirer.prompt(questions)
         .then(answers => {
           const projectName = process.argv[2];
-          const projectChoice = answers['project-choice'];
+          const projectChoice = getProjectType(answers['project-choice']);
           const installWordPress = answers['install-wordpress'] === 'yes';
           const templatePath = `${__dirname}/projects/${projectChoice}`;
 
@@ -163,32 +172,33 @@ if (project) {
           fs.mkdirSync(`${currentDir}/${projectName}/.tmp/theme-files`);
 
           if (installWordPress) {
-            console.log('Cloning WordPress...');
+            console.info('Cloning WordPress...');
 
             execSync(`git clone git://github.com/WordPress/WordPress.git .`, {
               stdio: [0, 1, 2],
               cwd: `${currentDir}/${projectName}/.tmp/wordpress`
             });
 
-            // remove version control, wp themes, & gitignore
+            // remove version control & wp themes
             rimraf.sync(`${currentDir}/${projectName}/.tmp/wordpress/.git`);
             rimraf.sync(`${currentDir}/${projectName}/.tmp/wordpress/wp-content/themes`);
-            rimraf.sync(`${currentDir}/${projectName}/.tmp/wordpress/.gitignore`)
 
             // copy wordpress to project dir
             copyDir.sync(`${currentDir}/${projectName}/.tmp/wordpress/`, `${currentDir}/${projectName}/`, { cover: true })
           }
 
           // grab the latest theme files
-          console.log('Cloning theme...');
+          console.info('Cloning theme...');
 
           execSync(`git clone https://github.com/hasanirogers/litpress-${projectChoice}.git .`, {
             stdio: [0, 1, 2],
             cwd: `${currentDir}/${projectName}/.tmp/theme-files`
           });
 
-          // remove version control
+          // remove version control & .gitignore
           rimraf.sync(`${currentDir}/${projectName}/.tmp/theme-files/.git`);
+          rimraf.sync(`${currentDir}/${projectName}/.tmp/theme-files/.gitignore`)
+
 
           // copy theme-files to project dir
           copyDir.sync(`${currentDir}/${projectName}/.tmp/theme-files/`, `${currentDir}/${projectName}/`, { cover: true });

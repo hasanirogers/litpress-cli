@@ -1,5 +1,5 @@
 {
-  "name": "lit-press",
+  "name": "litpress",
   "version": "0.0.1",
   "description": "A WordPress meets LitElement generator.",
   "main": "index.js",
